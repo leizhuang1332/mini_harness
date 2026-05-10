@@ -18,6 +18,7 @@ from typing import Callable, Dict, List, Tuple, Any
 EVENTS = [
     "session_start",   # 会话开始：加载 MEMORY.md / 初始化 progress.md
     "pre_iteration",   # 每轮 LLM 调用前：Budget 检查、context 压缩触发
+    "post_llm",         # 每轮 LLM 调用后：记录 LLM 输出
     "post_iteration",  # 每轮 LLM 调用后：usage 统计、post-round 状态保存
     "pre_tool_use",    # 工具调用前（可 veto）：Permission Gate 挂载点
     "post_tool_use",   # 工具调用后：错误显性化、自动 lint、progress 记录

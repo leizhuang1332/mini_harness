@@ -93,6 +93,7 @@ def run_agent(
                 tools=tool_schemas if tool_schemas else None,
                 temperature=config.temperature,
             )
+            hooks.trigger("post_llm", steps, response)
 
             # ── 阶段2：Budget 检测（使用真实 usage，无则估算）──
             usage = getattr(response, "usage", None)
@@ -276,8 +277,8 @@ def dispatch_tool(
         return result
     except Exception as e:
         # 工具执行失败：不吞掉异常，封装成 JSON 让 LLM 看到并决定如何重试
-        import traceback
-        traceback.print_exc()
+        # import traceback
+        # traceback.print_exc()
         return json.dumps({"error": f"Tool execution failed: {str(e)}"})
 
 

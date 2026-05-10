@@ -1,22 +1,4 @@
 #!/usr/bin/env python3
-"""
-端到端真实 demo：Baseline Agent vs Full Harness（10 机制）
-
-执行内容：
-  1. Baseline Agent：单轮 LLM 调用（无 Harness）
-  2. Full Harness Agent：启用全部 10 机制（原 6 + 新 4）
-     - Progress Tracking（写 progress.md）
-     - Permission Gate（挂 pre_tool_use，故意给 run_bash 工具测拦截）
-     - Hooks（事件总线，承载 Progress/Permission/Budget）
-     - Token Budget（BudgetGuard 硬上限）
-
-任务：分析 test_data/refactor_project/main.py 中的重复代码并给出重构建议。
-
-输出：
-  - demo_outputs/progress.md（Progress Tracker 真实落盘）
-  - demo_outputs/e2e_result.json（结构化指标）
-  - demo_outputs/e2e_report.md（人类可读报告，课件直接引用）
-"""
 
 import json
 import os
@@ -27,26 +9,23 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 
-# 加 HarnessEngineering/ 根目录下的 .env（用户指定路径）
+# 加载 project-root/ 根目录下的 .env（用户指定路径）
 REPO_ROOT = Path(__file__).parent.parent.resolve()
 print(f"REPO_ROOT={REPO_ROOT}")
-# HARNESS_ROOT = REPO_ROOT.parent.parent  # lesson2/mini_harness → lesson2 → HarnessEngineering
-# print(f"HARNESS_ROOT={HARNESS_ROOT}")
 load_dotenv(dotenv_path=REPO_ROOT / ".env")
 
 sys.path.insert(0, str(REPO_ROOT))
 
-from openai import OpenAI  # noqa: E402
-
-from harness.budget import BudgetGuard  # noqa: E402
-from harness.config import HarnessConfig  # noqa: E402
-from harness.core import run_agent  # noqa: E402
-from harness.hooks import HookManager  # noqa: E402
-from harness.permission import PermissionGate  # noqa: E402
-from harness.planner import reset_todos, todo_tool  # noqa: E402
-from harness.tool_file_ops import read_file, write_file, edit_file  # noqa: E402
-from harness.progress import ProgressTracker  # noqa: E402
-from harness.verifier import SYSTEM_PROMPT_WITH_VERIFICATION  # noqa: E402
+from harness.budget import BudgetGuard 
+from harness.config import HarnessConfig 
+from harness.core import run_agent  
+from harness.hooks import HookManager 
+from harness.permission import PermissionGate 
+from harness.planner import reset_todos, todo_tool 
+from harness.tool_file_ops import read_file, write_file, edit_file 
+from harness.progress import ProgressTracker 
+from harness.console import ConsolePrinter 
+from harness.verifier import SYSTEM_PROMPT_WITH_VERIFICATION 
 
 
 # ---- 配置 ----
@@ -60,16 +39,10 @@ import sys
 OUTPUT_DIR = REPO_ROOT / "demo_outputs"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-TEST_CODE_PATH = REPO_ROOT / "test_data" / "refactor_project" / "main.py"
-
-
-def read_test_code() -> str:
-    return TEST_CODE_PATH.read_text(encoding="utf-8")
-
 # ====================================================================
 # Demo 2: Full Harness Agent（10 机制全开）
 # ====================================================================
-def run_full_harness(user_goal: str, code: str) -> dict:
+def run_full_harness(user_goal: str) -> dict:
     print("\n" + "=" * 60)
     print("[Full Harness] 开始运行")
     print("=" * 60)
@@ -98,6 +71,9 @@ def run_full_harness(user_goal: str, code: str) -> dict:
         price_per_1k_output=0.015,
     )
     budget.register_to(hooks)
+
+    printer = ConsolePrinter()
+    printer.register_to(hooks)
 
     tools = {
         "read_file": read_file,
@@ -168,13 +144,11 @@ def main():
 
     print("=" * 60)
     print(f"模型：{MODEL_NAME}")
-    print(f"测试文件：{TEST_CODE_PATH}")
     print("=" * 60)
 
     user_goal = "根据李白的《春夜》写一篇关于春夜的诗"
-    code = read_test_code()
 
-    _retry(lambda: run_full_harness(user_goal, code), label="harness")
+    _retry(lambda: run_full_harness(user_goal), label="harness")
     
 
     print("\n" + "=" * 60)
