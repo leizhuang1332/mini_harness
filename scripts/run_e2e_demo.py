@@ -303,7 +303,7 @@ def _retry(fn, attempts: int = 5, delay: float = 5.0, label: str = "call"):
 
 def main():
     if not API_KEY:
-        print("❌ 缺少 OPENROUTER_API_KEY，请检查 HarnessEngineering/.env")
+        print("❌ 缺少 API_KEY，请检查 project-root/.env")
         sys.exit(1)
 
     mode = os.getenv("E2E_MODE", "both").lower()  # both / baseline / harness
